@@ -1,4 +1,3 @@
-
 # shows a user's playlists (need to be authenticated via oauth)
 
 from __future__ import print_function
@@ -12,9 +11,8 @@ import spotipy
 
 REDIRECT_URI = "http://localhost"
 
-
 def prompt_for_user_token(username, scope=None, client_id = None,
-        client_secret = None, cache_path = None):
+        client_secret = None, port = None, cache_path = None):
     ''' prompts the user to login if necessary and returns
         the user token suitable for use with the spotipy.Spotify 
         constructor
@@ -28,8 +26,8 @@ def prompt_for_user_token(username, scope=None, client_id = None,
          - cache_path - path to location to save tokens
 
     '''
-
-    assert_port_available(80)
+    global localhost_port
+    localhost_port = port
 
     if not client_id:
         client_id = os.getenv('SPOTIPY_CLIENT_ID')
@@ -52,7 +50,10 @@ def prompt_for_user_token(username, scope=None, client_id = None,
         raise spotipy.SpotifyException(550, -1, 'no credentials set')
 
     cache_path = cache_path or ".cache-" + username
-    sp_oauth = oauth2.SpotifyOAuth(client_id, client_secret, REDIRECT_URI,
+
+    url = REDIRECT_URI + ":" + str(localhost_port)
+
+    sp_oauth = oauth2.SpotifyOAuth(client_id, client_secret, url,
         scope=scope, cache_path=cache_path)
 
     # try to get a valid token for this user, from the cache,
@@ -77,6 +78,7 @@ def prompt_for_user_token(username, scope=None, client_id = None,
         except:
             print("Please navigate here: %s" % auth_url)
 
+        assert_port_available(localhost_port)
         code = get_authentication_code()
         token_info = sp_oauth.get_access_token(code)
     # Auth'ed API request
@@ -92,6 +94,8 @@ def assert_port_available(port):
     raise SpotifyException if the port is not available
     :param port: network port to check
     """
+
+    print("holaaa")
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.bind(("", port))
@@ -108,7 +112,7 @@ def get_authentication_code():
     As soon as a request is received, the server is closed.
     :return: the authentication code
     """
-    httpd = MicroServer((REDIRECT_URI.replace("http:", "").replace("https:", "").replace("/", ""), 80), CustomHandler)
+    httpd = MicroServer((REDIRECT_URI.replace("http:", "").replace("https:", "").replace("/", ""),localhost_port), CustomHandler)
     # stop the server once a request is received
     while not httpd.latest_query_components:
         httpd.handle_request()
