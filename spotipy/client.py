@@ -370,6 +370,19 @@ class Spotify(object):
         return self._get("users/%s/playlists" % user, limit=limit,
                          offset=offset)
 
+    def playlist(self, playlist_id, fields=None, market=None):
+        """ Gets playlist by id
+            
+            Parameters:
+            - playlist - the id of the playlist
+            - fields - which fields to return
+            - market - An ISO 3166-1 alpha-2 country code or the string from_token.
+            """
+
+        plid = self._get_id('playlist', playlist_id)
+
+        return self._get("playlists/%s" % (plid), fields=fields)
+    
     def user_playlist(self, user, playlist_id=None, fields=None):
         """ Gets playlist of a user
             Parameters:
